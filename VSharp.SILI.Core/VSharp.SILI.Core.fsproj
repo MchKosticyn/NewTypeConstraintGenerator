@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Options.fs" />
+        <Compile Include="Operations.fs" />
+        <Compile Include="Types.fs" />
+        <Compile Include="Terms.fs" />
+        <Compile Include="State.fs" />
+        <Compile Include="Propositional.fs" />
+        <Compile Include="Merging.fs" />
+        <Compile Include="Common.fs" />
+        <Compile Include="Arithmetics.fs" />
+        <Compile Include="Arrays.fs" />
+        <Compile Include="Strings.fs" />
+        <Compile Include="Pointers.fs" />
+        <Compile Include="TypeCasting.fs" />
+        <Compile Include="Operators.fs" />
+        <Compile Include="Substitution.fs" />
+        <Compile Include="Database.fs" />
+        <Compile Include="Memory.fs" />
+        <Compile Include="Explorer.fs" />
+        <Compile Include="API.fsi" />
+        <Compile Include="API.fs" />
+        <Compile Include="InterpreterBase.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\VSharp.CSharpUtils\VSharp.CSharpUtils.csproj" />
+      <ProjectReference Include="..\VSharp.Utils\VSharp.Utils.fsproj" />
+    </ItemGroup>
+
+</Project>

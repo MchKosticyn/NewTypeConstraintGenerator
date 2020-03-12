@@ -5,7 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using VSharp.Core;
+using System.Linq;
 using VSharp.Interpreter;
 
 namespace NewTypeConstraintGenerator
@@ -97,6 +97,10 @@ namespace NewTypeConstraintGenerator
             foreach (string testDir in tests)
             {
                 string[] libEntries = Directory.GetFiles(testDir);
+                //var paths = new[] {"NewTypeConstraintGenerator.dll", "mscorlib.dll"};
+                //var context = new MetadataLoadContext(new PathAssemblyResolver(paths));
+                //Console.WriteLine(context.CoreAssembly);
+
                 foreach (string lib in libEntries)
                 {
                     if (!lib.EndsWith(".dll", StringComparison.Ordinal) || ignoredLibs.Exists(i => lib.EndsWith(i)))
@@ -108,10 +112,20 @@ namespace NewTypeConstraintGenerator
                     AppDomain currentDomain = AppDomain.CurrentDomain;
                     currentDomain.AssemblyResolve += LoadFromTestFolder;
 
-                    IDictionary<MethodInfo, string /*IEnumerable<API.Term>*/> got = SVM.Run(Assembly.LoadFile(lib),
-                        ignoredTypes, whiteTypes);
+
+
+                    IDictionary<MethodInfo, string /*IEnumerable<API.Term>*/> got =
+                        SVM.Run( Assembly.LoadFrom(lib), /*context.LoadFromAssemblyPath(lib),*/
+                            ignoredTypes, whiteTypes);
+
+                    foreach (var str in got.Values)
+                    {
+                        Console.WriteLine(str);
+                    }
                 }
             }
+
+
         }
     }
 

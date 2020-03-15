@@ -173,7 +173,7 @@ module internal Common =
             Constant metadata (sprintf "IsNullable(%O)" termType) ({termType = termType}) Bool
         match termType with
         | TypeVariable(Id t) when TypeUtils.isReferenceTypeParameter t -> makeFalse metadata
-        | TypeVariable _ -> makeIsNullableBoolConst termType
+        | TypeVariable _ -> makeFalse metadata // TODO: it is hacky hack for Natasha #do
         | Null -> __unreachable__()
         | _ -> makeBool metadata (System.Nullable.GetUnderlyingType(toDotNetType termType) <> null)
 
@@ -202,7 +202,7 @@ module internal Common =
                     | Unsat -> thenBranch k
                     | _ -> execution condition k
         conditionInvocation (fun condition ->
-        Merging.commonGuardedErroredApplyk chooseBranch errorHandler condition merge k)
+        Merging.commonGuardedErroredApplykWithPC pc chooseBranch errorHandler condition merge k) // TODO: why we need this? There will always be bool, so no unions, right? #do
 
     let statelessConditionalExecutionWithMergek pc conditionInvocation thenBranch elseBranch k = commonStatelessConditionalExecutionk pc conditionInvocation thenBranch elseBranch Merging.merge Merging.merge2Terms id k
     let statelessConditionalExecutionWithMerge pc conditionInvocation thenBranch elseBranch = statelessConditionalExecutionWithMergek pc conditionInvocation thenBranch elseBranch id

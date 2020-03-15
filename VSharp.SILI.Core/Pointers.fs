@@ -263,14 +263,14 @@ module internal Pointers =
     let sub mtd x y =
         simplifyBinaryOperation mtd OperationType.Subtract State.empty x y fst
 
-    let isPointerOperation op t1 t2 =
+    let isPointerOperation op left t1 right t2 =
         let isRefOrNull t = Types.concreteIsReferenceType t || Types.isNull t
         let isPtrOrNull t = Types.isPointer t || Types.isNull t
 
         match op with
         | OperationType.Equal
         | OperationType.NotEqual ->
-            (isRefOrNull t1 && isRefOrNull t2) || (isPtrOrNull t1 && isPtrOrNull t2)
+            (isReference left && isReference right) || (isPointerTerm left && isPointerTerm right)
         | OperationType.Subtract -> Types.isPointer t1 && (Types.isPointer t2 || Types.isNumeric t2)
         | OperationType.Add ->
             (Types.isPointer t1 && Types.isNumeric t2) || (Types.isPointer t2 && Types.isNumeric t1)

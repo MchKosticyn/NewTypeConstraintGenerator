@@ -49,9 +49,9 @@ module public SVM =
            (List.isEmpty whiteList || List.exists (fun (keyword : String) -> t.AssemblyQualifiedName.Contains(keyword)) whiteList) && t.IsPublic then
             t.GetMethods(bindingFlags)
             |> FSharp.Collections.Array.iter (fun m -> 
-                (*match m.GetMethodBody() with
-                | null -> () 
-                | _ -> *)if m <> ep && not m.IsAbstract then (*try*) explore dictionary m (*with | _ -> ()*))  
+                match m.GetMethodBody() with
+                | null -> ()
+                | _ -> if m <> ep && not m.IsAbstract then (*try*) explore dictionary m (*with | _ -> ()*))
         
     let private replaceLambdaLines str =
         System.Text.RegularExpressions.Regex.Replace(str, @"@\d+(\+|\-)\d*\[Microsoft.FSharp.Core.Unit\]", "")

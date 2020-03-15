@@ -256,8 +256,8 @@ module internal InstructionsSet =
     let performCILBinaryOperation op isChecked operand1Transform operand2Transform resultTransform (cilState : cilState) =
         match cilState.opStack with
         | arg2 :: arg1 :: stack ->
-            operand1Transform arg1 cilState.state (fun (arg1, state) ->
-            operand2Transform arg2 state (fun (arg2, state) ->
+            GuardedStatedApplyStatementK cilState.state arg1 (fun state arg k -> operand1Transform arg state k) (fun (arg1, state) ->
+            GuardedStatedApplyStatementK state arg2 (fun state arg k -> operand2Transform arg state k) (fun (arg2, state) ->
             API.PerformBinaryOperation op isChecked state arg1 arg2 (fun (interimRes, state) ->
             resultTransform interimRes state (fun (res, state) -> {cilState with state = state; opStack = res :: stack } :: []))))
         | _ -> __notImplemented__()
@@ -313,18 +313,21 @@ module internal InstructionsSet =
             castUnchecked resultTyp t state
                 (fun (t, state) -> {cilState with functionResult = Some t; state = state} :: [])
          | _ -> __unreachable__()
-    let ConcreteTerm2BooleanTerm (term : term) =
-        match TypeOf term with
-        | Bool -> term
-        | t when t = TypeUtils.int32Type -> term !== TypeUtils.Int32.Zero
-        | _ when isReference term -> term !== MakeNullRef()
-        | _ -> __notImplemented__()
+    let ConcreteTerm2BooleanTerm pc (term : term) =
+        let check term =
+            match TypeOf term with
+            | Bool -> term
+            | t when t = TypeUtils.int32Type -> term !== TypeUtils.Int32.Zero // TODO: add int64 case #do
+            | _ when isReference term -> term !== MakeNullRef()
+            | _ -> __notImplemented__()
+        GuardedApplyExpressionWithPC pc term check
+
     let ceq (cilState : cilState) =
         match cilState.opStack with
         | y :: x :: _ ->
             let transform =
                 if TypeUtils.isBool x || TypeUtils.isBool y
-                then fun t state k -> k (ConcreteTerm2BooleanTerm t, state)
+                then fun t state k -> k (ConcreteTerm2BooleanTerm state.pc t, state)
                 else idTransformation
             performCILBinaryOperation OperationType.Equal false transform transform idTransformation cilState
         | _ -> __notImplemented__()
@@ -349,7 +352,7 @@ module internal InstructionsSet =
                | _ -> __unreachable__()
            let cilState = {cilState with opStack = stack}
            StatedConditionalExecutionCIL cilState
-               (fun state k -> k (condTransform <| ConcreteTerm2BooleanTerm cond, state))
+               (fun state k -> k (condTransform <| ConcreteTerm2BooleanTerm state.pc cond, state))
                (fun cilState k -> k [offsetThen, cilState])
                (fun cilState k -> k [offsetElse, cilState])
                id
@@ -564,9 +567,15 @@ module internal InstructionsSet =
         | _ -> __notImplemented__()
     let cgtun (cilState : cilState) =
         match cilState.opStack with
-        | arg2 :: arg1 :: _ when isReference arg2 && isReference arg1 ->
-            compare OperationType.NotEqual idTransformation idTransformation cilState
-        | _ -> compare OperationType.Greater makeUnsignedInteger makeUnsignedInteger cilState
+        | arg2 :: arg1 :: _ -> // TODO: this branch is unreachable, because pc: IsValueType(X) &&& (X <: System.Tuple)
+            let isReferenceType1 = if Terms.IsNullReference arg1 = True then True else !! (arg1 |> TypeOf |> Types.IsValueType) // TODO: it's temporary hack, delete it! #do
+            let isReferenceType2 = if Terms.IsNullReference arg2 = True then True else !! (arg2 |> TypeOf |> Types.IsValueType)
+            StatedConditionalExecutionCIL cilState
+                (fun state k -> k (isReferenceType1 ||| isReferenceType2, state)) // TODO: it's temporary hack, put conjunction instead! #do
+                (fun cilState k -> compare OperationType.NotEqual idTransformation idTransformation cilState |> k)
+                (fun cilState k -> compare OperationType.Greater makeUnsignedInteger makeUnsignedInteger cilState |> k)
+                id
+        | _ -> __notImplemented__()
     let ldobj (cfg : cfgData) offset (cilState : cilState) =
         match cilState.opStack with
         | address :: stack ->

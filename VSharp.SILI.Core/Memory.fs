@@ -417,7 +417,7 @@ module internal Memory =
                         resultCell, Array term.metadata dimension length newLower constant contents lengths
                     | _ -> __unreachable__()
                 | t -> internalfailf "expected complex type, but got %O" t
-        commonGuardedErroredApply doAccess (withFst value) value internalMerge
+        commonGuardedErroredApply [guard] doAccess (withFst value) value internalMerge
 
     and private compareStringKey mtd loc key = makeBool mtd (loc = key)
 

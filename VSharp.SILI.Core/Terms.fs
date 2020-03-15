@@ -433,6 +433,10 @@ module internal Terms =
         | Ref _ -> true
         | _ -> false
 
+    let isPtr = term >> function
+        | Ptr _ -> true
+        | _ -> false
+
     let isUnion = term >> function
         | Union _ -> true
         | _ -> false
@@ -591,10 +595,15 @@ module internal Terms =
         | Union gvs -> List.forall (snd >> isStruct) gvs
         | _ -> false
 
-    let rec isReference term =
+    let rec isReference term = // TODO: mb use state.pc? #do
         match term.term with
         | Union gvs -> List.forall (snd >> isReference) gvs
         | _ -> isRef term
+
+    let rec isPointerTerm term =
+        match term.term with
+        | Union gvs -> List.forall (snd >> isPointerTerm) gvs
+        | _ -> isPtr term
 
     let CastConcrete isChecked (value : obj) (t : System.Type) metadata =
         let actualType = if box value = null then t else value.GetType()
